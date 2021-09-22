@@ -1,0 +1,70 @@
+static_resources:
+  listeners:
+    - name: default_listener  
+      address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 443
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                codec_type: AUTO
+                stat_prefix: ingress_http
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: lipslist-frontend-host
+                      domains:
+                        - "symmetric.lipslist.com"
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: lipslist-frontend-cluster
+                    - name: lipslist-backend-host
+                      domains:
+                        - "symmetric.lipslist.com/api"
+                      routes:
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: lipslist-backend-cluster
+                http_filters:
+                  - name: envoy.filters.http.router
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain: { filename: "/etc/letsencrypt/live/lipslist.com/fullchain.pem" }
+                    private_key: { filename: "/etc/letsencrypt/live/lipslist.com/privkey.pem" }
+  clusters:
+    - name: lipslist-frontend-cluster
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: lipslist-frontend-cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 0.0.0.0
+                      port_value: 3000
+    - name: lipslist-backend-cluster
+      connect_timeout: 0.25s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: lipslist-backend-cluster
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 0.0.0.0
+                      port_value: 4000

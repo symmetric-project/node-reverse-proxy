@@ -15,22 +15,22 @@ static_resources:
                 route_config:
                   name: local_route
                   virtual_hosts:
-                    - name: lipslist-frontend-host
+                    - name: symmetric-frontend-host
                       domains:
                         - "symmetric.lipslist.com"
                       routes:
                         - match:
                             prefix: "/"
                           route:
-                            cluster: lipslist-frontend-cluster
-                    - name: lipslist-backend-host
+                            cluster: symmetric-frontend-cluster
+                    - name: symmetric-backend-host
                       domains:
                         - "symmetric.lipslist.com/api"
                       routes:
                         - match:
                             prefix: "/"
                           route:
-                            cluster: lipslist-backend-cluster
+                            cluster: symmetric-backend-cluster
                 http_filters:
                   - name: envoy.filters.http.router
           transport_socket:
@@ -42,12 +42,12 @@ static_resources:
                   - certificate_chain: { filename: "/etc/letsencrypt/live/lipslist.com/fullchain.pem" }
                     private_key: { filename: "/etc/letsencrypt/live/lipslist.com/privkey.pem" }
   clusters:
-    - name: lipslist-frontend-cluster
+    - name: symmetric-frontend-cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: lipslist-frontend-cluster
+        cluster_name: symmetric-frontend-cluster
         endpoints:
           - lb_endpoints:
               - endpoint:
@@ -55,12 +55,12 @@ static_resources:
                     socket_address:
                       address: 0.0.0.0
                       port_value: 3000
-    - name: lipslist-backend-cluster
+    - name: symmetric-backend-cluster
       connect_timeout: 0.25s
       type: STRICT_DNS
       lb_policy: ROUND_ROBIN
       load_assignment:
-        cluster_name: lipslist-backend-cluster
+        cluster_name: symmetric-backend-cluster
         endpoints:
           - lb_endpoints:
               - endpoint:
